@@ -1,17 +1,22 @@
-# four_gemini
+# FourGemini
 
-A new Flutter project.
+This repository shows how to create a flutter chat application with Gemini AI
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+## Installation
 
-A few resources to get you started if this is your first Flutter project:
+Follow these steps to install the application:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1 Clone the repository
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# FourGemini-Flutter
+```bash
+  https://github.com/rifquramandhita/FourGemini-Flutter.git
+```
+
+2 Setup Gemini API key in lib/core/constant/constant.dart
+
+```bash
+  const String GEMINI_API_KEY = '';
+```
+3 Run project
+    
