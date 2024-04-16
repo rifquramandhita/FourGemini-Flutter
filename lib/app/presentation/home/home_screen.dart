@@ -1,10 +1,15 @@
-import 'package:chat_bubbles/bubbles/bubble_special_one.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:four_gemini/app/module/entity/message_entity.dart';
 import 'package:four_gemini/app/presentation/home/home_notifier.dart';
+import 'package:four_gemini/core/helper/dialog_helper.dart';
 import 'package:four_gemini/core/helper/global_helper.dart';
+import 'package:four_gemini/core/widget/bubble_chat_app_widget.dart';
 import 'package:four_gemini/core/widget/card_filled_app_widget.dart';
 import 'package:four_gemini/core/widget/loading_app_widget.dart';
 import 'package:four_gemini/di.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -36,32 +41,19 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           children: [
             Expanded(
-                child: (notifier.userChat.isEmpty && notifier.userChat.isEmpty)
+                child: (notifier.userMessage == null &&
+                        notifier.userMessage == null)
                     ? Center(
                         child: Text('Enter a prompt'),
                       )
                     : SingleChildScrollView(
                         child: Column(
                         children: [
-                          BubbleSpecialOne(
-                            text: notifier.userChat,
-                            isSender: true,
-                            color: GlobalHelper.getColorSchema(context)
-                                .primaryContainer,
-                            tail: true,
-                          ),
-                          SizedBox(
-                            height: 20,
-                          ),
+                          _messageBuild(true, notifier.userMessage!),
                           (notifier.isLoading)
-                              ? LoadingAppWidget()
-                              : BubbleSpecialOne(
-                                  text: notifier.botChat,
-                                  isSender: false,
-                                  color: GlobalHelper.getColorSchema(context)
-                                      .tertiaryContainer,
-                                  tail: true,
-                                )
+                              ? BubbleChatAppWidget(
+                                  isUser: false, child: LoadingAppWidget())
+                              : _messageBuild(false, notifier.botMessage!)
                         ],
                       ))),
             Row(
@@ -70,7 +62,7 @@ class HomeScreen extends StatelessWidget {
                 Expanded(
                   child: CardFilledAppWidget(
                     content: Container(
-                      padding: EdgeInsets.fromLTRB(15, 0, 15, 0),
+                      padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
                       child: TextField(
                         minLines: 1,
                         maxLines: 4,
@@ -78,14 +70,18 @@ class HomeScreen extends StatelessWidget {
                         enableSuggestions: false,
                         autocorrect: false,
                         decoration: InputDecoration(
-                            border: InputBorder.none, hintText: "Prompt"),
+                            border: InputBorder.none,
+                            hintText: "Prompt",
+                            suffixIcon: IconButton(
+                                onPressed: () => _onPressMediaButton(context),
+                                icon: Icon(Icons.image))),
                         controller: notifier.textController,
                       ),
                     ),
                   ),
                 ),
                 IconButton.filled(
-                    onPressed: _onPressSendButton, icon: Icon(Icons.send))
+                    onPressed: _onPressSendTextButton, icon: Icon(Icons.send))
               ],
             ),
           ],
@@ -94,7 +90,63 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  _onPressSendButton() {
-    notifier.send();
+  _messageBuild(bool isUser, MessageEntity message) {
+    return BubbleChatAppWidget(
+      isUser: isUser,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        (message.image != null) ? Image.file(message.image!) : SizedBox(),
+        (message.text.isNotEmpty && message.image != null)
+            ? SizedBox(
+                height: 10,
+              )
+            : SizedBox(),
+        (message.text.isNotEmpty) ? Text(message.text) : SizedBox()
+      ]),
+    );
+  }
+
+  _onPressSendTextButton() {
+    notifier.sendText();
+  }
+
+  _onPressSendMediaButton(BuildContext context, File file) {
+    Navigator.pop(context);
+    notifier.sendMediaText(file);
+  }
+
+  _onPressMediaButton(BuildContext context) async {
+    ImagePicker picker = ImagePicker();
+    XFile? xfile = await picker.pickImage(source: ImageSource.gallery);
+    if (xfile != null) {
+      File file = File(xfile.path);
+      DialogHelper.showAppDialog(
+          context, Text('Send Image'), Image.file(file), [
+        Row(
+          children: [
+            Expanded(
+                child: CardFilledAppWidget(
+              content: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: TextField(
+                    controller: notifier.textController,
+                    minLines: 1,
+                    maxLines: 2,
+                    keyboardType: TextInputType.multiline,
+                    enableSuggestions: false,
+                    autocorrect: false,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: "Prompt",
+                    )),
+              ),
+            )),
+            IconButton.filled(
+              onPressed: () => _onPressSendMediaButton(context, file),
+              icon: Icon(Icons.send),
+            )
+          ],
+        )
+      ]);
+    }
   }
 }
